@@ -1,3 +1,4 @@
+# критерий 1A include: local: для обоих шаблонов 
 include:
   - local: "templates/python-jobs.yml"
   - local: "templates/deploy-jobs.yml"
