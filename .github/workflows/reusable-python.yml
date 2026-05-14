@@ -1,0 +1,37 @@
+name: Reusable Python Jobs
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        required: true
+        type: string
+
+      test-dir:
+        required: false
+        type: string
+        default: tests/
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements-dev.txt
+
+      - name: Run tests
+        run: |
+          PYTHONPATH=. pytest ${{ inputs.test-dir }}
+
+      - name: Run flake8
+        run: |
+          flake8 src tests --max-line-length=120
