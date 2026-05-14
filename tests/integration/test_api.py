@@ -1,5 +1,6 @@
 from src.todo.app import app
 
+
 def test_create_todo():
     client = app.test_client()
 
@@ -23,4 +24,4 @@ def test_get_todos():
 
     assert response.status_code == 200
     assert isinstance(response.json, list)
-    
+
