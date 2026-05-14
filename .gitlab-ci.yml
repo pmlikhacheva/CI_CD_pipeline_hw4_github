@@ -3,7 +3,7 @@ include:
   - local: "templates/python-jobs.yml"
   - local: "templates/deploy-jobs.yml"
 
-
+# rhbnthbq 9A workflow.rules с условиями (MR event, main, develop, tag)
 workflow:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
@@ -33,18 +33,18 @@ lint:
   variables:
     MAX_LINE_LENGTH: "120"
 
-# критерий 3A Job test:unit: extends без изменений 
+# критерий 4A Job test:unit: extends без изменений 
 test:unit:
   extends: .test-job
 
   parallel:
-    # критерий 4A Job test:unit: матрица на 3 версии Python, образ из переменной матрицы
+    # критерий 5A Job test:unit: матрица на 3 версии Python, образ из переменной матрицы
     matrix:
       - PYTHON_VERSION: ["3.10", "3.11", "3.12"]
 
   image: python:${PYTHON_VERSION}-slim
 
-# критерий 5A Job test:integration: extends, переменные, allow_failure
+# критерий 6A Job test:integration: extends, переменные, allow_failure
 test:integration:
   extends: .test-job
 
@@ -55,7 +55,7 @@ test:integration:
 
   image: python:3.11-slim
 
-# критерий 6A Job build:image: extends, rules: (main + tag), сохраняет dist/image.tar
+# критерий 7A Job build:image: extends, rules: (main + tag), сохраняет dist/image.tar
 build:image:
   extends: .docker-build-job
 
@@ -69,7 +69,7 @@ build:image:
     paths:
       - dist/image.tar
 
-
+# критерий 1B needs: с artifacts: true от build:image 
 sbom:image:
   stage: sbom
 
@@ -78,41 +78,37 @@ sbom:image:
   services:
     - docker:26-dind
 
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-
   needs:
     - job: build:image
       artifacts: true
 
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+
   before_script:
     - apk add --no-cache curl
-
     - curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh \
       | sh -s -- -b /usr/local/bin v1.4.1
 
+  script:
     - docker load -i dist/image.tar
 
-  script:
     - mkdir -p sbom
 
-    - export IMAGE=${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}
+    - export IMAGE=todo-api:${CI_COMMIT_SHORT_SHA}
 
     - syft ${IMAGE} -o cyclonedx-json=sbom/image.cdx.json
-
     - syft ${IMAGE} -o spdx-json=sbom/image.spdx.json
 
   artifacts:
     expose_as: "SBOM todo-api image"
-
     expire_in: 90 days
-
     paths:
       - sbom/image.cdx.json
       - sbom/image.spdx.json
 
-
+# критерий 8А Job deploy:staging: наследование, env, переменные, rule на develop
 deploy:staging:
   extends: .ssh-deploy
 
@@ -127,7 +123,7 @@ deploy:staging:
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'
 
-
+# критерий 9А Job deploy:production: наследование, when: manual, rule на tag
 deploy:production:
   extends: .k8s-deploy
 
