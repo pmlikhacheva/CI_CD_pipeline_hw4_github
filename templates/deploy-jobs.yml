@@ -1,0 +1,21 @@
+.k8s-deploy:
+  stage: deploy
+  image: bitnami/kubectl:latest
+
+  script:
+    - kubectl config use-context ${K8S_CONTEXT}
+    - kubectl set image deployment/${K8S_DEPLOYMENT} \
+      ${K8S_DEPLOYMENT}=${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA} \
+      -n ${K8S_NAMESPACE}
+
+
+.ssh-deploy:
+  stage: deploy
+  image: alpine:latest
+
+  before_script:
+    - apk add --no-cache openssh-client
+
+  script:
+    - echo "Deploying to ${DEPLOY_HOST}"
+    - ssh deploy@${DEPLOY_HOST} "docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
